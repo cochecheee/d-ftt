@@ -54,8 +54,10 @@ app.get("/", async (req, res) => {
   });
 });
 
+// get the countryCode from user input, then insert it into the visited_countries table.
 app.post("/add", async (req, res) => {
   const input = req.body["country"];
+  const currentUser = await getCurrentUser();
 
   try {
     const result = await db.query(
@@ -70,6 +72,7 @@ app.post("/add", async (req, res) => {
         "INSERT INTO visited_countries (country_code, user_id) VALUES ($1, $2)",
         [countryCode, currentUserId]
       );
+      console.log(currentUserId);
       res.redirect("/");
     } catch (err) {
       console.log(err);
@@ -78,6 +81,7 @@ app.post("/add", async (req, res) => {
     console.log(err);
   }
 });
+
 app.post("/user", async (req, res) => {
   // define whether the button is Add or Member
   const data = req.body;
