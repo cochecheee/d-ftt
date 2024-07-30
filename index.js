@@ -38,8 +38,8 @@ async function checkVisisted() {
 
 async function getCurrentUser() {
   const result = await db.query("select * from users");
-  const currentUser = result.rows.find((user) => user.id == currentUserId);
-  return currentUser;
+  users = result.rows;
+  return users.find((user) => user.id == currentUserId);
 }
 
 app.get("/", async (req, res) => {
@@ -53,6 +53,7 @@ app.get("/", async (req, res) => {
     color: currentUser.color,
   });
 });
+
 app.post("/add", async (req, res) => {
   const input = req.body["country"];
 
@@ -66,8 +67,8 @@ app.post("/add", async (req, res) => {
     const countryCode = data.country_code;
     try {
       await db.query(
-        "INSERT INTO visited_countries (country_code) VALUES ($1)",
-        [countryCode]
+        "INSERT INTO visited_countries (country_code, user_id) VALUES ($1, $2)",
+        [countryCode, currentUserId]
       );
       res.redirect("/");
     } catch (err) {
@@ -77,11 +78,31 @@ app.post("/add", async (req, res) => {
     console.log(err);
   }
 });
-app.post("/user", async (req, res) => {});
+app.post("/user", async (req, res) => {
+  // define whether the button is Add or Member
+  const data = req.body;
+  if (data.add === "new") {
+    res.render("new.ejs");
+  } else {
+    // find id of user and redirect to homepage
+    currentUserId = parseInt(data.user);
+    res.redirect("/");
+  }
+});
 
 app.post("/new", async (req, res) => {
   //Hint: The RETURNING keyword can return the data that was inserted.
   //https://www.postgresql.org/docs/current/dml-returning.html
+  const data = req.body;
+  const newUser = data.name;
+  const newUserColor = data.color;
+
+  // create a query
+  const newQuery = "insert into users(name,color) values ($1, $2) RETURNING *";
+  const result = await db.query(newQuery, [newUser, newUserColor]);
+  currentUserId = result.rows[0].id;
+
+  res.redirect("/");
 });
 
 app.listen(port, () => {
